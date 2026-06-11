@@ -1,0 +1,632 @@
+openapi: 3.0.3
+
+info:
+  title: Product Lifecycle Tracker API
+  version: 1.0.0
+  description: >
+    REST API for tracking the lifecycle of software products across the
+    Ideation, Definition and Development phases. Single-user; all `/api`
+    endpoints require a Firebase ID token.
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:3000
+    description: Local development
+  - url: https://your-app.up.railway.app
+    description: Railway (production)
+
+tags:
+  - name: health
+    description: Service liveness
+  - name: products
+    description: Product management
+  - name: features
+    description: Feature backlog (RICE / MoSCoW)
+  - name: sprints
+    description: Sprints
+  - name: tasks
+    description: Sprint tasks
+  - name: kpis
+    description: KPIs and their history
+
+security:
+  - BearerAuth: []
+
+paths:
+  /health:
+    get:
+      tags: [health]
+      summary: Liveness/readiness probe
+      operationId: getHealth
+      security: []
+      responses:
+        '200':
+          description: Service healthy
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Health' }
+        '503':
+          description: Database unreachable
+
+  /api/products:
+    get:
+      tags: [products]
+      summary: List products
+      operationId: listProducts
+      responses:
+        '200':
+          description: All products with child counts
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ProductWithCounts' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [products]
+      summary: Create a product
+      operationId: createProduct
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProductInput' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Product' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/products/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ProductId'
+    get:
+      tags: [products]
+      summary: Get a product
+      operationId: getProduct
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductWithCounts' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [products]
+      summary: Update a product
+      operationId: updateProduct
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProductInput' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Product' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [products]
+      summary: Delete a product (cascades to children)
+      operationId: deleteProduct
+      responses:
+        '204': { description: Deleted }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/products/{id}/features:
+    parameters:
+      - $ref: '#/components/parameters/ProductId'
+    get:
+      tags: [features]
+      summary: List features for a product
+      operationId: listFeatures
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Feature' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [features]
+      summary: Create a feature
+      operationId: createFeature
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/FeatureInput' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Feature' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/products/{id}/features/{fid}:
+    parameters:
+      - $ref: '#/components/parameters/ProductId'
+      - $ref: '#/components/parameters/FeatureId'
+    put:
+      tags: [features]
+      summary: Update a feature
+      operationId: updateFeature
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/FeatureInput' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Feature' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [features]
+      summary: Delete a feature
+      operationId: deleteFeature
+      responses:
+        '204': { description: Deleted }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/products/{id}/sprints:
+    parameters:
+      - $ref: '#/components/parameters/ProductId'
+    get:
+      tags: [sprints]
+      summary: List sprints for a product
+      operationId: listSprints
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Sprint' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [sprints]
+      summary: Create a sprint
+      operationId: createSprint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SprintInput' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Sprint' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/products/{id}/sprints/{sid}:
+    parameters:
+      - $ref: '#/components/parameters/ProductId'
+      - $ref: '#/components/parameters/SprintId'
+    put:
+      tags: [sprints]
+      summary: Update a sprint
+      operationId: updateSprint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SprintInput' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Sprint' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/products/{id}/sprints/{sid}/tasks:
+    parameters:
+      - $ref: '#/components/parameters/ProductId'
+      - $ref: '#/components/parameters/SprintId'
+    get:
+      tags: [tasks]
+      summary: List tasks in a sprint
+      operationId: listTasks
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Task' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [tasks]
+      summary: Create a task
+      operationId: createTask
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TaskInput' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Task' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/products/{id}/sprints/{sid}/tasks/{tid}:
+    parameters:
+      - $ref: '#/components/parameters/ProductId'
+      - $ref: '#/components/parameters/SprintId'
+      - $ref: '#/components/parameters/TaskId'
+    put:
+      tags: [tasks]
+      summary: Update a task
+      operationId: updateTask
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TaskInput' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Task' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [tasks]
+      summary: Delete a task
+      operationId: deleteTask
+      responses:
+        '204': { description: Deleted }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/products/{id}/kpis:
+    parameters:
+      - $ref: '#/components/parameters/ProductId'
+    get:
+      tags: [kpis]
+      summary: List KPIs (with history) for a product
+      operationId: listKpis
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/KpiWithValues' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [kpis]
+      summary: Create a KPI
+      operationId: createKpi
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/KpiInput' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Kpi' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/products/{id}/kpis/{kid}:
+    parameters:
+      - $ref: '#/components/parameters/ProductId'
+      - $ref: '#/components/parameters/KpiId'
+    put:
+      tags: [kpis]
+      summary: Update a KPI
+      operationId: updateKpi
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/KpiInput' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Kpi' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/products/{id}/kpis/{kid}/values:
+    parameters:
+      - $ref: '#/components/parameters/ProductId'
+      - $ref: '#/components/parameters/KpiId'
+    get:
+      tags: [kpis]
+      summary: KPI value history (sparkline)
+      operationId: listKpiValues
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/KpiValue' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [kpis]
+      summary: Log a new KPI data point
+      operationId: createKpiValue
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/KpiValueInput' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/KpiValue' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >
+        A Firebase ID token. Obtain it client-side after Firebase sign-in and
+        send it as `Authorization: Bearer <idToken>`.
+
+  parameters:
+    ProductId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    FeatureId:
+      name: fid
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    SprintId:
+      name: sid
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    TaskId:
+      name: tid
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    KpiId:
+      name: kid
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid Firebase token
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+  schemas:
+    Health:
+      type: object
+      properties:
+        status: { type: string, example: ok }
+        database: { type: string, example: up }
+        timestamp: { type: string, format: date-time }
+
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string, example: NOT_FOUND }
+        message: { type: string }
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field: { type: string }
+              message: { type: string }
+
+    Timestamps:
+      type: object
+      properties:
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    ProductStatus:
+      type: string
+      enum: [ideation, definition, development]
+
+    ProductInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, maxLength: 200 }
+        description: { type: string, nullable: true }
+        status: { $ref: '#/components/schemas/ProductStatus' }
+
+    Product:
+      allOf:
+        - $ref: '#/components/schemas/Timestamps'
+        - type: object
+          properties:
+            id: { type: string, format: uuid }
+            name: { type: string }
+            description: { type: string, nullable: true }
+            status: { $ref: '#/components/schemas/ProductStatus' }
+
+    ProductWithCounts:
+      allOf:
+        - $ref: '#/components/schemas/Product'
+        - type: object
+          properties:
+            _count:
+              type: object
+              properties:
+                features: { type: integer }
+                sprints: { type: integer }
+                kpis: { type: integer }
+
+    FeatureInput:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string, maxLength: 200 }
+        description: { type: string, nullable: true }
+        phase:
+          type: string
+          enum: [ideation, definition, development]
+        priorityMethod:
+          type: string
+          enum: [rice, moscow]
+        riceReach: { type: number, nullable: true }
+        riceImpact: { type: number, nullable: true }
+        riceConfidence: { type: number, nullable: true, minimum: 0, maximum: 1 }
+        riceEffort: { type: number, nullable: true }
+        moscowCategory:
+          type: string
+          nullable: true
+          enum: [must, should, could, wont]
+        status:
+          type: string
+          enum: [idea, backlog, in_progress, done, rejected]
+
+    Feature:
+      allOf:
+        - $ref: '#/components/schemas/Timestamps'
+        - $ref: '#/components/schemas/FeatureInput'
+        - type: object
+          properties:
+            id: { type: string, format: uuid }
+            productId: { type: string, format: uuid }
+
+    SprintInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, maxLength: 200 }
+        goal: { type: string, nullable: true }
+        startDate: { type: string, format: date-time, nullable: true }
+        endDate: { type: string, format: date-time, nullable: true }
+        status:
+          type: string
+          enum: [planned, active, completed]
+
+    Sprint:
+      allOf:
+        - $ref: '#/components/schemas/Timestamps'
+        - $ref: '#/components/schemas/SprintInput'
+        - type: object
+          properties:
+            id: { type: string, format: uuid }
+            productId: { type: string, format: uuid }
+
+    TaskInput:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string, maxLength: 200 }
+        description: { type: string, nullable: true }
+        status:
+          type: string
+          enum: [todo, in_progress, done]
+        estimatedHours: { type: number, nullable: true }
+        actualHours: { type: number, nullable: true }
+        featureId: { type: string, format: uuid, nullable: true }
+
+    Task:
+      allOf:
+        - $ref: '#/components/schemas/Timestamps'
+        - $ref: '#/components/schemas/TaskInput'
+        - type: object
+          properties:
+            id: { type: string, format: uuid }
+            sprintId: { type: string, format: uuid }
+
+    KpiInput:
+      type: object
+      required: [name, unit]
+      properties:
+        name: { type: string, maxLength: 200 }
+        description: { type: string, nullable: true }
+        unit: { type: string, example: users }
+        targetValue: { type: number, nullable: true }
+        currentValue: { type: number, nullable: true }
+
+    Kpi:
+      allOf:
+        - $ref: '#/components/schemas/Timestamps'
+        - $ref: '#/components/schemas/KpiInput'
+        - type: object
+          properties:
+            id: { type: string, format: uuid }
+            productId: { type: string, format: uuid }
+
+    KpiWithValues:
+      allOf:
+        - $ref: '#/components/schemas/Kpi'
+        - type: object
+          properties:
+            values:
+              type: array
+              items: { $ref: '#/components/schemas/KpiValue' }
+
+    KpiValueInput:
+      type: object
+      required: [value]
+      properties:
+        value: { type: number }
+        recordedAt: { type: string, format: date-time }
+
+    KpiValue:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        kpiId: { type: string, format: uuid }
+        value: { type: number }
+        recordedAt: { type: string, format: date-time }
