@@ -1,0 +1,27 @@
+[build]
+  command = "npm run build"
+  publish = "dist/gestione-progetto/browser"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Angular handles routing client-side — send all paths to index.html.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Long-cache fingerprinted assets.
+[[headers]]
+  for = "/*.@(js|css)"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Baseline security headers.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=()"

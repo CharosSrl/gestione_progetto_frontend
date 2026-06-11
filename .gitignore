@@ -1,0 +1,35 @@
+# Dependencies
+/node_modules
+npm-debug.log*
+yarn-error.log*
+
+# Angular / build output
+/dist
+/tmp
+/out-tsc
+/.angular/cache
+.angular/
+
+# IDE / editors
+/.idea
+*.iml
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+/coverage
+
+# Deployment
+.netlify/
+.firebase/
+firebase-debug.log
+
+# Environment / secrets (keep example envs, ignore real secret overrides)
+*.local
+.env

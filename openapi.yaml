@@ -11,10 +11,10 @@ info:
     name: MIT
 
 servers:
+  - url: https://backend-production-898a.up.railway.app
+    description: Railway (production)
   - url: http://localhost:3000
     description: Local development
-  - url: https://your-app.up.railway.app
-    description: Railway (production)
 
 tags:
   - name: health
