@@ -89,7 +89,9 @@ export class LoginComponent {
     } catch (err: unknown) {
       const code = (err as { code?: string })?.code ?? '';
       if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
-        this.notify.error('Sign-in failed. Please try again.');
+        const message = (err as { message?: string })?.message ?? 'Unknown error';
+        console.error('Google sign-in failed:', err);
+        this.notify.error(`Sign-in failed: ${code || message}`);
       }
     } finally {
       this.busy.set(false);

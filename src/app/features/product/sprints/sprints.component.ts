@@ -7,6 +7,7 @@ import { NotificationService } from '../../../core/services/notification.service
 import { ConfirmService } from '../../../shared/confirm.service';
 import {
   Feature,
+  PaginationMeta,
   Sprint,
   SprintInput,
   SprintStatus,
@@ -18,6 +19,7 @@ import { BadgeComponent } from '../../../shared/badge.component';
 import { ModalComponent } from '../../../shared/modal.component';
 import { SpinnerComponent } from '../../../shared/spinner.component';
 import { EmptyStateComponent } from '../../../shared/empty-state.component';
+import { PaginatorComponent } from '../../../shared/paginator.component';
 
 const SPRINT_STATUSES: SprintStatus[] = ['planned', 'active', 'completed'];
 const TASK_COLUMNS: { key: TaskStatus; label: string; emoji: string }[] = [
@@ -37,6 +39,7 @@ const TASK_COLUMNS: { key: TaskStatus; label: string; emoji: string }[] = [
     ModalComponent,
     SpinnerComponent,
     EmptyStateComponent,
+    PaginatorComponent,
   ],
   template: `
     <div class="spread bar">
@@ -71,6 +74,7 @@ const TASK_COLUMNS: { key: TaskStatus; label: string; emoji: string }[] = [
               }
             </button>
           }
+          <app-paginator [meta]="meta()" (pageChange)="goTo($event)" />
         </aside>
 
         <section class="board-wrap">
@@ -283,6 +287,8 @@ export class SprintsComponent implements OnInit {
   readonly sprintStatuses = SPRINT_STATUSES;
 
   readonly sprints = signal<Sprint[]>([]);
+  readonly meta = signal<PaginationMeta | null>(null);
+  readonly page = signal(1);
   readonly features = signal<Feature[]>([]);
   readonly loading = signal(true);
   readonly selectedId = signal<string | null>(null);
@@ -317,7 +323,8 @@ export class SprintsComponent implements OnInit {
 
   ngOnInit(): void {
     this.load();
-    this.featuresApi.list(this.id()).subscribe({ next: (f) => this.features.set(f) });
+    // Load features (first 100) to populate the task's "linked feature" dropdown.
+    this.featuresApi.list(this.id(), 1, 100).subscribe({ next: (res) => this.features.set(res.data) });
   }
 
   private blankTask() {
@@ -333,16 +340,22 @@ export class SprintsComponent implements OnInit {
 
   load(): void {
     this.loading.set(true);
-    this.api.list(this.id()).subscribe({
-      next: (list) => {
-        this.sprints.set(list);
+    this.api.list(this.id(), this.page()).subscribe({
+      next: (res) => {
+        this.sprints.set(res.data);
+        this.meta.set(res.meta);
         this.loading.set(false);
-        if (list.length && !this.selectedId()) {
-          this.select(list[0].id);
+        if (res.data.length && !this.selectedId()) {
+          this.select(res.data[0].id);
         }
       },
       error: () => this.loading.set(false),
     });
+  }
+
+  goTo(page: number): void {
+    this.page.set(page);
+    this.load();
   }
 
   select(sprintId: string): void {
@@ -355,8 +368,8 @@ export class SprintsComponent implements OnInit {
     if (!sid) return;
     this.tasksLoading.set(true);
     this.api.listTasks(this.id(), sid).subscribe({
-      next: (list) => {
-        this.tasks.set(list);
+      next: (res) => {
+        this.tasks.set(res.data);
         this.tasksLoading.set(false);
       },
       error: () => this.tasksLoading.set(false),
@@ -413,9 +426,11 @@ export class SprintsComponent implements OnInit {
         this.saving.set(false);
         this.showSprintForm.set(false);
         this.notify.success(editing ? 'Sprint updated.' : 'Sprint created.');
-        this.api.list(this.id()).subscribe({
-          next: (list) => {
-            this.sprints.set(list);
+        if (!editing) this.page.set(1);
+        this.api.list(this.id(), this.page()).subscribe({
+          next: (res) => {
+            this.sprints.set(res.data);
+            this.meta.set(res.meta);
             if (!editing) this.select(saved.id);
           },
         });

@@ -10,6 +10,7 @@ import {
   FeaturePhase,
   FeatureStatus,
   MoscowCategory,
+  PaginationMeta,
   PriorityMethod,
   riceScore,
 } from '../../../core/models/models';
@@ -17,6 +18,7 @@ import { BadgeComponent } from '../../../shared/badge.component';
 import { ModalComponent } from '../../../shared/modal.component';
 import { SpinnerComponent } from '../../../shared/spinner.component';
 import { EmptyStateComponent } from '../../../shared/empty-state.component';
+import { PaginatorComponent } from '../../../shared/paginator.component';
 
 const STATUSES: FeatureStatus[] = ['idea', 'backlog', 'in_progress', 'done', 'rejected'];
 const PHASES: FeaturePhase[] = ['ideation', 'definition', 'development'];
@@ -39,7 +41,15 @@ interface FeatureForm {
   selector: 'app-features',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, DecimalPipe, BadgeComponent, ModalComponent, SpinnerComponent, EmptyStateComponent],
+  imports: [
+    FormsModule,
+    DecimalPipe,
+    BadgeComponent,
+    ModalComponent,
+    SpinnerComponent,
+    EmptyStateComponent,
+    PaginatorComponent,
+  ],
   template: `
     <div class="spread bar">
       <p class="muted">Prioritise your backlog with RICE scoring or MoSCoW categories.</p>
@@ -87,6 +97,7 @@ interface FeatureForm {
           </section>
         }
       }
+      <app-paginator [meta]="meta()" (pageChange)="goTo($event)" />
     }
 
     @if (showForm()) {
@@ -215,6 +226,8 @@ export class FeaturesComponent implements OnInit {
   readonly moscow = MOSCOW;
 
   readonly features = signal<Feature[]>([]);
+  readonly meta = signal<PaginationMeta | null>(null);
+  readonly page = signal(1);
   readonly loading = signal(true);
   readonly showForm = signal(false);
   readonly editing = signal<Feature | null>(null);
@@ -252,13 +265,19 @@ export class FeaturesComponent implements OnInit {
 
   load(): void {
     this.loading.set(true);
-    this.api.list(this.id()).subscribe({
-      next: (list) => {
-        this.features.set(list);
+    this.api.list(this.id(), this.page()).subscribe({
+      next: (res) => {
+        this.features.set(res.data);
+        this.meta.set(res.meta);
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
     });
+  }
+
+  goTo(page: number): void {
+    this.page.set(page);
+    this.load();
   }
 
   score(f: Feature): number | null {
@@ -324,6 +343,7 @@ export class FeaturesComponent implements OnInit {
         this.saving.set(false);
         this.showForm.set(false);
         this.notify.success(editing ? 'Feature updated.' : 'Feature added.');
+        if (!editing) this.page.set(1);
         this.load();
       },
       error: () => this.saving.set(false),

@@ -40,6 +40,9 @@ Folder map (`src/app/`):
 - `core/models/models.ts` — TS types mirroring the OpenAPI schemas + `riceScore()`.
 - `core/services/` — one service per entity (`products`, `features`, `sprints`
   incl. nested tasks, `kpis` incl. values) + `notification.service` (toasts).
+  List endpoints return a paginated envelope `{ data, meta }` (`Paginated<T>`,
+  `PaginationMeta`); services take `(…, page, pageSize)`. Products are scoped
+  per-user by the backend (`Product.userId`).
 - `shared/` — reusable standalone UI: badge, modal, sparkline (inline SVG),
   toast, confirm dialog/service, empty-state, spinner, `status-meta`.
 - `features/` — `auth/login`, `products` (dashboard), `product/` workspace with

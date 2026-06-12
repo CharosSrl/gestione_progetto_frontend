@@ -2,15 +2,15 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Product, ProductInput, ProductWithCounts } from '../models/models';
+import { Paginated, Product, ProductInput, ProductWithCounts } from '../models/models';
 
 @Injectable({ providedIn: 'root' })
 export class ProductsService {
   private http = inject(HttpClient);
   private base = `${environment.apiUrl}/api/products`;
 
-  list(): Observable<ProductWithCounts[]> {
-    return this.http.get<ProductWithCounts[]>(this.base);
+  list(page = 1, pageSize = 20): Observable<Paginated<ProductWithCounts>> {
+    return this.http.get<Paginated<ProductWithCounts>>(this.base, { params: { page, pageSize } });
   }
 
   get(id: string): Observable<ProductWithCounts> {

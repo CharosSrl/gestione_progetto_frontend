@@ -54,14 +54,15 @@ paths:
       tags: [products]
       summary: List products
       operationId: listProducts
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
       responses:
         '200':
-          description: All products with child counts
+          description: Paginated products with child counts
           content:
             application/json:
-              schema:
-                type: array
-                items: { $ref: '#/components/schemas/ProductWithCounts' }
+              schema: { $ref: '#/components/schemas/PaginatedProducts' }
         '401': { $ref: '#/components/responses/Unauthorized' }
     post:
       tags: [products]
@@ -128,14 +129,15 @@ paths:
       tags: [features]
       summary: List features for a product
       operationId: listFeatures
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
       responses:
         '200':
-          description: OK
+          description: Paginated features
           content:
             application/json:
-              schema:
-                type: array
-                items: { $ref: '#/components/schemas/Feature' }
+              schema: { $ref: '#/components/schemas/PaginatedFeatures' }
         '404': { $ref: '#/components/responses/NotFound' }
     post:
       tags: [features]
@@ -191,14 +193,15 @@ paths:
       tags: [sprints]
       summary: List sprints for a product
       operationId: listSprints
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
       responses:
         '200':
-          description: OK
+          description: Paginated sprints
           content:
             application/json:
-              schema:
-                type: array
-                items: { $ref: '#/components/schemas/Sprint' }
+              schema: { $ref: '#/components/schemas/PaginatedSprints' }
         '404': { $ref: '#/components/responses/NotFound' }
     post:
       tags: [sprints]
@@ -248,14 +251,15 @@ paths:
       tags: [tasks]
       summary: List tasks in a sprint
       operationId: listTasks
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
       responses:
         '200':
-          description: OK
+          description: Paginated tasks
           content:
             application/json:
-              schema:
-                type: array
-                items: { $ref: '#/components/schemas/Task' }
+              schema: { $ref: '#/components/schemas/PaginatedTasks' }
         '404': { $ref: '#/components/responses/NotFound' }
     post:
       tags: [tasks]
@@ -312,14 +316,15 @@ paths:
       tags: [kpis]
       summary: List KPIs (with history) for a product
       operationId: listKpis
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
       responses:
         '200':
-          description: OK
+          description: Paginated KPIs
           content:
             application/json:
-              schema:
-                type: array
-                items: { $ref: '#/components/schemas/KpiWithValues' }
+              schema: { $ref: '#/components/schemas/PaginatedKpis' }
         '404': { $ref: '#/components/responses/NotFound' }
     post:
       tags: [kpis]
@@ -369,14 +374,15 @@ paths:
       tags: [kpis]
       summary: KPI value history (sparkline)
       operationId: listKpiValues
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
       responses:
         '200':
-          description: OK
+          description: Paginated KPI values (oldest first)
           content:
             application/json:
-              schema:
-                type: array
-                items: { $ref: '#/components/schemas/KpiValue' }
+              schema: { $ref: '#/components/schemas/PaginatedKpiValues' }
         '404': { $ref: '#/components/responses/NotFound' }
     post:
       tags: [kpis]
@@ -432,6 +438,18 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    PageParam:
+      name: page
+      in: query
+      required: false
+      description: 1-based page number
+      schema: { type: integer, minimum: 1, default: 1 }
+    PageSizeParam:
+      name: pageSize
+      in: query
+      required: false
+      description: Items per page
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
 
   responses:
     Unauthorized:
@@ -478,6 +496,15 @@ components:
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
 
+    PaginationMeta:
+      type: object
+      required: [total, page, pageSize, totalPages]
+      properties:
+        total: { type: integer, example: 42 }
+        page: { type: integer, example: 1 }
+        pageSize: { type: integer, example: 20 }
+        totalPages: { type: integer, example: 3 }
+
     ProductStatus:
       type: string
       enum: [ideation, definition, development]
@@ -496,6 +523,7 @@ components:
         - type: object
           properties:
             id: { type: string, format: uuid }
+            userId: { type: string, format: uuid, readOnly: true }
             name: { type: string }
             description: { type: string, nullable: true }
             status: { $ref: '#/components/schemas/ProductStatus' }
@@ -630,3 +658,58 @@ components:
         kpiId: { type: string, format: uuid }
         value: { type: number }
         recordedAt: { type: string, format: date-time }
+
+    # --- Paginated list envelopes ({ data, meta }) -------------------------
+    PaginatedProducts:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/ProductWithCounts' }
+        meta: { $ref: '#/components/schemas/PaginationMeta' }
+
+    PaginatedFeatures:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/Feature' }
+        meta: { $ref: '#/components/schemas/PaginationMeta' }
+
+    PaginatedSprints:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/Sprint' }
+        meta: { $ref: '#/components/schemas/PaginationMeta' }
+
+    PaginatedTasks:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/Task' }
+        meta: { $ref: '#/components/schemas/PaginationMeta' }
+
+    PaginatedKpis:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/KpiWithValues' }
+        meta: { $ref: '#/components/schemas/PaginationMeta' }
+
+    PaginatedKpiValues:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/KpiValue' }
+        meta: { $ref: '#/components/schemas/PaginationMeta' }

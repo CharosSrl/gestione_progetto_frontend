@@ -5,6 +5,19 @@ export interface Timestamps {
   updatedAt: string;
 }
 
+export interface PaginationMeta {
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+/** Envelope returned by every list endpoint: `{ data, meta }`. */
+export interface Paginated<T> {
+  data: T[];
+  meta: PaginationMeta;
+}
+
 export type ProductStatus = 'ideation' | 'definition' | 'development';
 
 export interface ProductInput {
@@ -15,6 +28,7 @@ export interface ProductInput {
 
 export interface Product extends Timestamps {
   id: string;
+  userId?: string;
   name: string;
   description?: string | null;
   status: ProductStatus;

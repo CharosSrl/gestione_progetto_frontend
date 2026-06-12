@@ -3,11 +3,12 @@ import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { KpisService } from '../../../core/services/kpis.service';
 import { NotificationService } from '../../../core/services/notification.service';
-import { Kpi, KpiInput, KpiWithValues } from '../../../core/models/models';
+import { Kpi, KpiInput, KpiWithValues, PaginationMeta } from '../../../core/models/models';
 import { ModalComponent } from '../../../shared/modal.component';
 import { SpinnerComponent } from '../../../shared/spinner.component';
 import { EmptyStateComponent } from '../../../shared/empty-state.component';
 import { SparklineComponent } from '../../../shared/sparkline.component';
+import { PaginatorComponent } from '../../../shared/paginator.component';
 
 @Component({
   selector: 'app-kpis',
@@ -20,6 +21,7 @@ import { SparklineComponent } from '../../../shared/sparkline.component';
     SpinnerComponent,
     EmptyStateComponent,
     SparklineComponent,
+    PaginatorComponent,
   ],
   template: `
     <div class="spread bar">
@@ -73,6 +75,7 @@ import { SparklineComponent } from '../../../shared/sparkline.component';
           </div>
         }
       </div>
+      <app-paginator [meta]="meta()" (pageChange)="goTo($event)" />
     }
 
     <!-- KPI create/edit -->
@@ -164,6 +167,8 @@ export class KpisComponent implements OnInit {
   readonly id = input.required<string>();
 
   readonly kpis = signal<KpiWithValues[]>([]);
+  readonly meta = signal<PaginationMeta | null>(null);
+  readonly page = signal(1);
   readonly loading = signal(true);
   readonly showForm = signal(false);
   readonly editing = signal<Kpi | null>(null);
@@ -187,13 +192,19 @@ export class KpisComponent implements OnInit {
 
   load(): void {
     this.loading.set(true);
-    this.api.list(this.id()).subscribe({
-      next: (list) => {
-        this.kpis.set(list.map((k) => ({ ...k, values: sortByDate(k.values ?? []) })));
+    this.api.list(this.id(), this.page()).subscribe({
+      next: (res) => {
+        this.kpis.set(res.data.map((k) => ({ ...k, values: sortByDate(k.values ?? []) })));
+        this.meta.set(res.meta);
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
     });
+  }
+
+  goTo(page: number): void {
+    this.page.set(page);
+    this.load();
   }
 
   series(k: KpiWithValues): number[] {
@@ -247,6 +258,7 @@ export class KpisComponent implements OnInit {
         this.saving.set(false);
         this.showForm.set(false);
         this.notify.success(editing ? 'KPI updated.' : 'KPI created.');
+        if (!editing) this.page.set(1);
         this.load();
       },
       error: () => this.saving.set(false),

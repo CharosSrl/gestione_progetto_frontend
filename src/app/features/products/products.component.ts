@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { ProductsService } from '../../core/services/products.service';
 import { NotificationService } from '../../core/services/notification.service';
 import {
+  PaginationMeta,
   Product,
   ProductInput,
   ProductStatus,
@@ -13,6 +14,7 @@ import { BadgeComponent } from '../../shared/badge.component';
 import { ModalComponent } from '../../shared/modal.component';
 import { SpinnerComponent } from '../../shared/spinner.component';
 import { EmptyStateComponent } from '../../shared/empty-state.component';
+import { PaginatorComponent } from '../../shared/paginator.component';
 
 const STATUSES: ProductStatus[] = ['ideation', 'definition', 'development'];
 
@@ -20,7 +22,14 @@ const STATUSES: ProductStatus[] = ['ideation', 'definition', 'development'];
   selector: 'app-products',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, BadgeComponent, ModalComponent, SpinnerComponent, EmptyStateComponent],
+  imports: [
+    FormsModule,
+    BadgeComponent,
+    ModalComponent,
+    SpinnerComponent,
+    EmptyStateComponent,
+    PaginatorComponent,
+  ],
   template: `
     <div class="page">
       <div class="spread head">
@@ -58,6 +67,7 @@ const STATUSES: ProductStatus[] = ['ideation', 'definition', 'development'];
             </div>
           }
         </div>
+        <app-paginator [meta]="meta()" (pageChange)="goTo($event)" />
       }
     </div>
 
@@ -143,6 +153,8 @@ export class ProductsComponent {
 
   readonly statuses = STATUSES;
   readonly products = signal<ProductWithCounts[]>([]);
+  readonly meta = signal<PaginationMeta | null>(null);
+  readonly page = signal(1);
   readonly loading = signal(true);
   readonly showForm = signal(false);
   readonly editing = signal<ProductWithCounts | null>(null);
@@ -160,13 +172,19 @@ export class ProductsComponent {
 
   load(): void {
     this.loading.set(true);
-    this.api.list().subscribe({
-      next: (list) => {
-        this.products.set(list);
+    this.api.list(this.page()).subscribe({
+      next: (res) => {
+        this.products.set(res.data);
+        this.meta.set(res.meta);
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
     });
+  }
+
+  goTo(page: number): void {
+    this.page.set(page);
+    this.load();
   }
 
   label(s: ProductStatus): string {
@@ -209,6 +227,7 @@ export class ProductsComponent {
         this.saving.set(false);
         this.showForm.set(false);
         this.notify.success(editing ? 'Product updated.' : 'Product created.');
+        if (!editing) this.page.set(1);
         this.load();
       },
       error: () => this.saving.set(false),

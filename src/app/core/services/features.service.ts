@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Feature, FeatureInput } from '../models/models';
+import { Feature, FeatureInput, Paginated } from '../models/models';
 
 @Injectable({ providedIn: 'root' })
 export class FeaturesService {
@@ -11,8 +11,8 @@ export class FeaturesService {
     return `${environment.apiUrl}/api/products/${productId}/features`;
   }
 
-  list(productId: string): Observable<Feature[]> {
-    return this.http.get<Feature[]>(this.base(productId));
+  list(productId: string, page = 1, pageSize = 20): Observable<Paginated<Feature>> {
+    return this.http.get<Paginated<Feature>>(this.base(productId), { params: { page, pageSize } });
   }
 
   create(productId: string, input: FeatureInput): Observable<Feature> {

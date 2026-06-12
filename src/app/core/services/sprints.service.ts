@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Sprint, SprintInput, Task, TaskInput } from '../models/models';
+import { Paginated, Sprint, SprintInput, Task, TaskInput } from '../models/models';
 
 @Injectable({ providedIn: 'root' })
 export class SprintsService {
@@ -14,8 +14,8 @@ export class SprintsService {
     return `${this.base(productId)}/${sprintId}/tasks`;
   }
 
-  list(productId: string): Observable<Sprint[]> {
-    return this.http.get<Sprint[]>(this.base(productId));
+  list(productId: string, page = 1, pageSize = 20): Observable<Paginated<Sprint>> {
+    return this.http.get<Paginated<Sprint>>(this.base(productId), { params: { page, pageSize } });
   }
 
   create(productId: string, input: SprintInput): Observable<Sprint> {
@@ -28,8 +28,10 @@ export class SprintsService {
 
   // --- Tasks (nested under a sprint) ---
 
-  listTasks(productId: string, sprintId: string): Observable<Task[]> {
-    return this.http.get<Task[]>(this.tasksBase(productId, sprintId));
+  listTasks(productId: string, sprintId: string, page = 1, pageSize = 100): Observable<Paginated<Task>> {
+    return this.http.get<Paginated<Task>>(this.tasksBase(productId, sprintId), {
+      params: { page, pageSize },
+    });
   }
 
   createTask(productId: string, sprintId: string, input: TaskInput): Observable<Task> {
