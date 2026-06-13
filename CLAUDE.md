@@ -11,6 +11,13 @@ imported below so their guidance is in context from the start of every session.
 When working in this project, follow the conventions defined by these skills.
 Read a skill's `references/*.md` files only when the skill tells you to.
 
+- **context-guardian** — apply at the start of and throughout **every** session:
+  watch the context window and act at ~40% usage (compact/reset) to avoid
+  context rot.
+- **angular-project** — conventions for building this Angular app (incl.
+  generating the API layer from `openapi.yaml`).
+
+@skills/context-guardian/SKILL.md
 @skills/angular-project/SKILL.md
 
 <!--
@@ -46,8 +53,14 @@ Folder map (`src/app/`):
 - `shared/` — reusable standalone UI: badge, modal, sparkline (inline SVG),
   toast, confirm dialog/service, empty-state, spinner, `status-meta`.
 - `features/` — `auth/login`, `products` (dashboard), `product/` workspace with
-  lazy child tabs `features` (RICE/MoSCoW), `sprints` (+ task board), `kpis`.
-- `layout/shell.component` — top bar + user menu, wraps all authed routes.
+  lazy child tabs `features` (RICE/MoSCoW), `sprints` (+ task board), `kpis`,
+  `growth`. Growth = a hacking **canvas** (7 sections × fields × notes, `PATCH`
+  updates) + RICE-scored **experiments** board, under `…/growth` (see
+  `growth/growth-fields.ts` for the section/field scaffold).
+- `layout/shell.component` — top bar + user menu + theme toggle, wraps all authed routes.
+- `core/theme/theme.service` — light/dark via `data-theme` on <html> + localStorage;
+  dark token set lives in `:root[data-theme="dark"]` in `styles.scss`. Initialized
+  in the root `App` so it applies app-wide.
 
 Design system: soft/friendly tokens in `src/styles.scss` (CSS custom properties,
 `.btn`/`.card`/`.pill`/`.tabs` utility classes). Env config + Firebase keys in

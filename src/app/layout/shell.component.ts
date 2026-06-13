@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { AuthService } from '../core/auth/auth.service';
+import { ThemeService } from '../core/theme/theme.service';
 
 @Component({
   selector: 'app-shell',
@@ -13,6 +14,13 @@ import { AuthService } from '../core/auth/auth.service';
         <span class="mark">🚀</span>
         <span class="name">Lifecycle</span>
       </a>
+
+      <div class="bar-right">
+      <button type="button" class="theme-toggle" (click)="theme.toggle()"
+              [attr.aria-label]="theme.theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
+              [title]="theme.theme() === 'dark' ? 'Light mode' : 'Dark mode'">
+        {{ theme.theme() === 'dark' ? '☀️' : '🌙' }}
+      </button>
 
       <div class="user" (click)="menuOpen.set(!menuOpen())">
         @if (auth.photoURL(); as photo) {
@@ -34,6 +42,7 @@ import { AuthService } from '../core/auth/auth.service';
           </div>
         }
       </div>
+      </div>
     </header>
 
     @if (menuOpen()) {
@@ -53,11 +62,28 @@ import { AuthService } from '../core/auth/auth.service';
       align-items: center;
       justify-content: space-between;
       padding: 12px 24px;
-      background: rgba(255, 255, 255, 0.82);
+      background: var(--bar-bg);
       backdrop-filter: blur(12px);
       border-bottom: 1.5px solid var(--border);
     }
     .brand { display: flex; align-items: center; gap: 9px; }
+    .bar-right { display: flex; align-items: center; gap: 8px; }
+    .theme-toggle {
+      border: 1.5px solid var(--border-strong);
+      background: var(--surface);
+      width: 38px;
+      height: 38px;
+      border-radius: var(--r-pill);
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.15s, transform 0.1s;
+    }
+    .theme-toggle:hover { border-color: var(--primary); }
+    .theme-toggle:active { transform: scale(0.94); }
     .mark { font-size: 22px; }
     .name { font-size: 19px; font-weight: 900; color: var(--text); letter-spacing: -0.02em; }
     .user {
@@ -123,6 +149,7 @@ import { AuthService } from '../core/auth/auth.service';
 })
 export class ShellComponent {
   readonly auth = inject(AuthService);
+  readonly theme = inject(ThemeService);
   private router = inject(Router);
   readonly menuOpen = signal(false);
 

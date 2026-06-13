@@ -139,3 +139,76 @@ export function riceScore(f: Pick<FeatureInput, 'riceReach' | 'riceImpact' | 'ri
   }
   return (riceReach * riceImpact * riceConfidence) / riceEffort;
 }
+
+// --- Growth: hacking canvas (notes) ------------------------------------------
+
+export type GrowthSection =
+  | 'project_overview'
+  | 'metrics'
+  | 'retention'
+  | 'acquisition'
+  | 'toolbox'
+  | 'high_tempo_testing'
+  | 'customer_loops';
+
+export interface GrowthNoteCreate {
+  section: GrowthSection;
+  field: string;
+  content: string;
+  order?: number;
+}
+
+export interface GrowthNotePatch {
+  content?: string;
+  order?: number;
+}
+
+export interface GrowthNote extends Timestamps {
+  id: string;
+  productId: string;
+  section: GrowthSection;
+  field: string;
+  content: string;
+  order: number;
+}
+
+/** Map of field name → ordered notes. */
+export type FieldNotes = Record<string, GrowthNote[]>;
+
+/** Full canvas: every section present, grouped by field. */
+export type GrowthCanvas = Record<GrowthSection, FieldNotes>;
+
+// --- Growth: experiments (high-tempo testing, RICE) --------------------------
+
+export type ExperimentStatus = 'backlog' | 'running' | 'done';
+export type ExperimentOutcome = 'validated' | 'invalidated' | 'inconclusive';
+
+export interface GrowthExperimentInput {
+  hypothesis?: string | null;
+  section?: GrowthSection;
+  metric?: string | null;
+  riceReach?: number | null;
+  riceImpact?: number | null;
+  riceConfidence?: number | null; // 0..1
+  riceEffort?: number | null;
+  status?: ExperimentStatus;
+  outcome?: ExperimentOutcome;
+  learning?: string | null;
+  startedAt?: string | null;
+  endedAt?: string | null;
+}
+
+export interface GrowthExperimentCreate extends GrowthExperimentInput {
+  title: string;
+}
+
+export interface GrowthExperimentPatch extends GrowthExperimentInput {
+  title?: string;
+}
+
+export interface GrowthExperiment extends Timestamps, GrowthExperimentInput {
+  id: string;
+  productId: string;
+  title: string;
+  status: ExperimentStatus;
+}

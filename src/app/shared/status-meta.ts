@@ -39,9 +39,28 @@ const MOSCOW: Record<string, StatusMeta> = {
   wont: { label: "Won't", fg: '--c-muted', bg: '--c-muted-bg' },
 };
 
+const EXPERIMENT: Record<string, StatusMeta> = {
+  backlog: { label: 'Backlog', fg: '--c-muted', bg: '--c-muted-bg' },
+  running: { label: 'Running', fg: '--c-warning', bg: '--c-warning-bg' },
+  done: { label: 'Done', fg: '--c-success', bg: '--c-success-bg' },
+};
+
+const OUTCOME: Record<string, StatusMeta> = {
+  validated: { label: 'Validated', fg: '--c-success', bg: '--c-success-bg' },
+  invalidated: { label: 'Invalidated', fg: '--c-danger', bg: '--c-danger-bg' },
+  inconclusive: { label: 'Inconclusive', fg: '--c-muted', bg: '--c-muted-bg' },
+};
+
 const FALLBACK: StatusMeta = { label: '—', fg: '--c-muted', bg: '--c-muted-bg' };
 
-export type StatusKind = 'product' | 'feature' | 'sprint' | 'task' | 'moscow';
+export type StatusKind =
+  | 'product'
+  | 'feature'
+  | 'sprint'
+  | 'task'
+  | 'moscow'
+  | 'experiment'
+  | 'outcome';
 
 const TABLES: Record<StatusKind, Record<string, StatusMeta>> = {
   product: PRODUCT,
@@ -49,6 +68,8 @@ const TABLES: Record<StatusKind, Record<string, StatusMeta>> = {
   sprint: SPRINT,
   task: TASK,
   moscow: MOSCOW,
+  experiment: EXPERIMENT,
+  outcome: OUTCOME,
 };
 
 export function statusMeta(kind: StatusKind, value: string | null | undefined): StatusMeta {

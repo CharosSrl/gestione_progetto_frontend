@@ -29,6 +29,8 @@ tags:
     description: Sprint tasks
   - name: kpis
     description: KPIs and their history
+  - name: growth
+    description: Growth-hacking canvas (notes) and RICE-scored experiments, per product
 
 security:
   - BearerAuth: []
@@ -402,6 +404,178 @@ paths:
         '400': { $ref: '#/components/responses/ValidationError' }
         '404': { $ref: '#/components/responses/NotFound' }
 
+  # ---- Growth: canvas full view --------------------------------------------
+  /api/products/{id}/growth/canvas:
+    parameters:
+      - $ref: '#/components/parameters/ProductId'
+    get:
+      tags: [growth]
+      summary: Full growth canvas (section → field → notes)
+      operationId: getGrowthCanvas
+      responses:
+        '200':
+          description: Canvas grouped by section and field (all sections present)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GrowthCanvas' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ---- Growth: canvas notes ------------------------------------------------
+  /api/products/{id}/growth/notes:
+    parameters:
+      - $ref: '#/components/parameters/ProductId'
+    get:
+      tags: [growth]
+      summary: List growth notes (filterable by section/field)
+      operationId: listGrowthNotes
+      parameters:
+        - $ref: '#/components/parameters/SectionQuery'
+        - $ref: '#/components/parameters/FieldQuery'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+      responses:
+        '200':
+          description: Paginated growth notes
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaginatedGrowthNotes' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [growth]
+      summary: Create a growth note
+      description: '`field` must belong to the chosen `section` (see GrowthSection field sets).'
+      operationId: createGrowthNote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/GrowthNoteCreate' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GrowthNote' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/products/{id}/growth/notes/{noteId}:
+    parameters:
+      - $ref: '#/components/parameters/ProductId'
+      - $ref: '#/components/parameters/NoteId'
+    get:
+      tags: [growth]
+      summary: Get a growth note
+      operationId: getGrowthNote
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GrowthNote' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [growth]
+      summary: Update a growth note (content/order)
+      operationId: patchGrowthNote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/GrowthNotePatch' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GrowthNote' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [growth]
+      summary: Delete a growth note
+      operationId: deleteGrowthNote
+      responses:
+        '204': { description: Deleted }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ---- Growth: experiments (high-tempo testing, RICE) ----------------------
+  /api/products/{id}/growth/experiments:
+    parameters:
+      - $ref: '#/components/parameters/ProductId'
+    get:
+      tags: [growth]
+      summary: List growth experiments (filterable by status)
+      operationId: listGrowthExperiments
+      parameters:
+        - $ref: '#/components/parameters/ExperimentStatusQuery'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+      responses:
+        '200':
+          description: Paginated experiments
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaginatedGrowthExperiments' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [growth]
+      summary: Create a growth experiment
+      operationId: createGrowthExperiment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/GrowthExperimentCreate' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GrowthExperiment' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/products/{id}/growth/experiments/{experimentId}:
+    parameters:
+      - $ref: '#/components/parameters/ProductId'
+      - $ref: '#/components/parameters/ExperimentId'
+    get:
+      tags: [growth]
+      summary: Get a growth experiment
+      operationId: getGrowthExperiment
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GrowthExperiment' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [growth]
+      summary: Update a growth experiment
+      operationId: patchGrowthExperiment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/GrowthExperimentPatch' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GrowthExperiment' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [growth]
+      summary: Delete a growth experiment
+      operationId: deleteGrowthExperiment
+      responses:
+        '204': { description: Deleted }
+        '404': { $ref: '#/components/responses/NotFound' }
+
 components:
   securitySchemes:
     BearerAuth:
@@ -450,6 +624,34 @@ components:
       required: false
       description: Items per page
       schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    NoteId:
+      name: noteId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ExperimentId:
+      name: experimentId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    SectionQuery:
+      name: section
+      in: query
+      required: false
+      description: Filter notes by canvas section
+      schema: { $ref: '#/components/schemas/GrowthSection' }
+    FieldQuery:
+      name: field
+      in: query
+      required: false
+      description: Filter notes by field within the section
+      schema: { type: string }
+    ExperimentStatusQuery:
+      name: status
+      in: query
+      required: false
+      description: Filter experiments by status
+      schema: { $ref: '#/components/schemas/ExperimentStatus' }
 
   responses:
     Unauthorized:
@@ -712,4 +914,150 @@ components:
         data:
           type: array
           items: { $ref: '#/components/schemas/KpiValue' }
+        meta: { $ref: '#/components/schemas/PaginationMeta' }
+
+    # --- Growth: canvas notes ---------------------------------------------
+    GrowthSection:
+      type: string
+      description: |
+        Growth canvas section. Allowed `field` values per section:
+        - project_overview: unique_value_proposition, secret_sauce, core_value, target_customers, why
+        - metrics: formula, north_star_metric
+        - retention: short_term, medium_term, long_term
+        - acquisition: language_market_fit, channel_product_fit
+        - toolbox: data_mining, social_tracking, ads_tracking, surveys, other
+        - high_tempo_testing: framework, frequency
+        - customer_loops: payload, conversion_rate, frequency
+      enum:
+        - project_overview
+        - metrics
+        - retention
+        - acquisition
+        - toolbox
+        - high_tempo_testing
+        - customer_loops
+
+    GrowthNoteCreate:
+      type: object
+      required: [section, field, content]
+      properties:
+        section: { $ref: '#/components/schemas/GrowthSection' }
+        field: { type: string, example: north_star_metric }
+        content: { type: string, minLength: 1 }
+        order: { type: integer, minimum: 0, default: 0 }
+
+    GrowthNotePatch:
+      type: object
+      description: At least one of content/order.
+      properties:
+        content: { type: string, minLength: 1 }
+        order: { type: integer, minimum: 0 }
+
+    GrowthNote:
+      allOf:
+        - $ref: '#/components/schemas/Timestamps'
+        - type: object
+          required: [id, productId, section, field, content, order]
+          properties:
+            id: { type: string, format: uuid }
+            productId: { type: string, format: uuid }
+            section: { $ref: '#/components/schemas/GrowthSection' }
+            field: { type: string }
+            content: { type: string }
+            order: { type: integer }
+
+    FieldNotes:
+      type: object
+      description: Map of field name → ordered list of notes
+      additionalProperties:
+        type: array
+        items: { $ref: '#/components/schemas/GrowthNote' }
+
+    GrowthCanvas:
+      type: object
+      description: Full canvas grouped by section → field → notes (all sections present)
+      required:
+        - project_overview
+        - metrics
+        - retention
+        - acquisition
+        - toolbox
+        - high_tempo_testing
+        - customer_loops
+      properties:
+        project_overview: { $ref: '#/components/schemas/FieldNotes' }
+        metrics: { $ref: '#/components/schemas/FieldNotes' }
+        retention: { $ref: '#/components/schemas/FieldNotes' }
+        acquisition: { $ref: '#/components/schemas/FieldNotes' }
+        toolbox: { $ref: '#/components/schemas/FieldNotes' }
+        high_tempo_testing: { $ref: '#/components/schemas/FieldNotes' }
+        customer_loops: { $ref: '#/components/schemas/FieldNotes' }
+
+    PaginatedGrowthNotes:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/GrowthNote' }
+        meta: { $ref: '#/components/schemas/PaginationMeta' }
+
+    # --- Growth: experiments (high-tempo testing, RICE) -------------------
+    ExperimentStatus:
+      type: string
+      enum: [backlog, running, done]
+
+    ExperimentOutcome:
+      type: string
+      enum: [validated, invalidated, inconclusive]
+
+    GrowthExperimentInput:
+      type: object
+      properties:
+        hypothesis: { type: string, nullable: true }
+        section: { $ref: '#/components/schemas/GrowthSection' }
+        metric: { type: string, nullable: true, example: activation_rate }
+        riceReach: { type: number, nullable: true }
+        riceImpact: { type: number, nullable: true }
+        riceConfidence: { type: number, nullable: true, minimum: 0, maximum: 1 }
+        riceEffort: { type: number, nullable: true }
+        status: { $ref: '#/components/schemas/ExperimentStatus' }
+        outcome: { $ref: '#/components/schemas/ExperimentOutcome' }
+        learning: { type: string, nullable: true }
+        startedAt: { type: string, format: date-time, nullable: true }
+        endedAt: { type: string, format: date-time, nullable: true }
+
+    GrowthExperimentCreate:
+      allOf:
+        - type: object
+          required: [title]
+          properties:
+            title: { type: string, minLength: 1, maxLength: 200 }
+        - $ref: '#/components/schemas/GrowthExperimentInput'
+
+    GrowthExperimentPatch:
+      allOf:
+        - type: object
+          properties:
+            title: { type: string, minLength: 1, maxLength: 200 }
+        - $ref: '#/components/schemas/GrowthExperimentInput'
+
+    GrowthExperiment:
+      allOf:
+        - $ref: '#/components/schemas/Timestamps'
+        - type: object
+          required: [id, productId, title, status]
+          properties:
+            id: { type: string, format: uuid }
+            productId: { type: string, format: uuid }
+            title: { type: string }
+        - $ref: '#/components/schemas/GrowthExperimentInput'
+
+    PaginatedGrowthExperiments:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/GrowthExperiment' }
         meta: { $ref: '#/components/schemas/PaginationMeta' }

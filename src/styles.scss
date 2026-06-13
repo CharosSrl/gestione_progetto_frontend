@@ -11,6 +11,13 @@
   --border: #ece7f7;
   --border-strong: #ddd5f0;
 
+  /* Background ambience (theme-able) */
+  --grad-1: #efeafd;
+  --grad-2: #fdeee6;
+
+  /* Translucent sticky top bar */
+  --bar-bg: rgba(255, 255, 255, 0.82);
+
   /* Text */
   --text: #2b2540;
   --text-soft: #6b6385;
@@ -65,6 +72,51 @@
   --font: "Nunito", "Segoe UI", system-ui, -apple-system, sans-serif;
 }
 
+/* ---------- Dark theme ---------- */
+:root[data-theme="dark"] {
+  --bg: #14121f;
+  --bg-tint: #1d1930;
+  --surface: #1e1a2e;
+  --surface-2: #262136;
+  --border: #2e2842;
+  --border-strong: #3b3457;
+
+  --grad-1: #221d3a;
+  --grad-2: #2a2036;
+  --bar-bg: rgba(20, 18, 31, 0.82);
+
+  --text: #ece9f7;
+  --text-soft: #a9a1c6;
+  --text-faint: #756d92;
+
+  --primary: #9486f5;
+  --primary-strong: #a99cff;
+  --primary-soft: #2c2750;
+  --primary-contrast: #16131f;
+  --accent: #ff9a76;
+  --accent-soft: #3a2a2a;
+
+  --c-ideation: #7fb4ff;
+  --c-ideation-bg: #1d2a40;
+  --c-definition: #c39bff;
+  --c-definition-bg: #2c2347;
+  --c-development: #62d2ad;
+  --c-development-bg: #163029;
+
+  --c-success: #5fd0a0;
+  --c-success-bg: #16302a;
+  --c-warning: #f3b35f;
+  --c-warning-bg: #382a17;
+  --c-danger: #f47d8c;
+  --c-danger-bg: #3a1f25;
+  --c-muted: #9aa0b3;
+  --c-muted-bg: #2a2c38;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 18px 40px rgba(0, 0, 0, 0.55);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -80,10 +132,11 @@ body {
   font-family: var(--font);
   color: var(--text);
   background:
-    radial-gradient(1200px 600px at 100% -10%, var(--bg-tint), transparent 60%),
-    radial-gradient(900px 500px at -10% 110%, #fdeee6, transparent 55%),
+    radial-gradient(1200px 600px at 100% -10%, var(--grad-1), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, var(--grad-2), transparent 55%),
     var(--bg);
   background-attachment: fixed;
+  transition: background-color 0.3s ease, color 0.3s ease;
   font-size: 15px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -231,7 +284,7 @@ textarea {
   color: var(--primary-strong);
 }
 .btn-subtle:hover:not(:disabled) {
-  background: #e1ddfd;
+  filter: brightness(1.06);
 }
 .btn-danger {
   background: var(--c-danger-bg);

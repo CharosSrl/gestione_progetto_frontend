@@ -45,6 +45,11 @@ export const routes: Routes = [
             loadComponent: () =>
               import('./features/product/kpis/kpis.component').then((m) => m.KpisComponent),
           },
+          {
+            path: 'growth',
+            loadComponent: () =>
+              import('./features/product/growth/growth.component').then((m) => m.GrowthComponent),
+          },
         ],
       },
     ],

@@ -49,6 +49,7 @@ const STATUSES: ProductStatus[] = ['ideation', 'definition', 'development'];
           <a routerLink="features" routerLinkActive="active">🧩 Features</a>
           <a routerLink="sprints" routerLinkActive="active">🏃 Sprints</a>
           <a routerLink="kpis" routerLinkActive="active">📈 KPIs</a>
+          <a routerLink="growth" routerLinkActive="active">🌱 Growth</a>
         </nav>
 
         <router-outlet></router-outlet>
