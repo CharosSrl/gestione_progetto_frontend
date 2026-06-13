@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { GrowthService } from '../../../core/services/growth.service';
 import { NotificationService } from '../../../core/services/notification.service';
@@ -6,7 +6,7 @@ import { ConfirmService } from '../../../shared/confirm.service';
 import { GrowthCanvas, GrowthNote, GrowthSection } from '../../../core/models/models';
 import { ModalComponent } from '../../../shared/modal.component';
 import { SpinnerComponent } from '../../../shared/spinner.component';
-import { GROWTH_SECTIONS, humaniseField } from './growth-fields';
+import { GROWTH_SECTIONS, GrowthSectionDef, humaniseField } from './growth-fields';
 
 @Component({
   selector: 'app-growth-canvas',
@@ -19,28 +19,39 @@ import { GROWTH_SECTIONS, humaniseField } from './growth-fields';
     @if (loading()) {
       <app-spinner label="Loading canvas…" />
     } @else {
-      <div class="canvas">
-        @for (section of sections; track section.key) {
-          <section class="card sec">
-            <div class="sec-head">
-              <h3>{{ section.emoji }} {{ section.label }}</h3>
-              <span class="faint">{{ section.hint }}</span>
+      <div class="layout">
+        <aside class="rail">
+          @for (section of sections; track section.key) {
+            <button type="button" class="sec-item" [class.sel]="selectedSection() === section.key"
+                    (click)="selectedSection.set(section.key)">
+              <span class="ic">{{ section.emoji }}</span>
+              <span class="lbl">{{ section.label }}</span>
+              @if (countFor(section.key); as n) { <span class="cnt">{{ n }}</span> }
+            </button>
+          }
+        </aside>
+
+        @if (current(); as sec) {
+          <section class="card detail">
+            <div class="detail-head">
+              <h3>{{ sec.emoji }} {{ sec.label }}</h3>
+              <span class="faint">{{ sec.hint }}</span>
             </div>
             <div class="fields">
-              @for (field of section.fields; track field) {
+              @for (field of sec.fields; track field) {
                 <div class="field-block">
                   <div class="fb-head">
                     <span class="fname">{{ label(field) }}</span>
-                    <button type="button" class="add" (click)="openCreate(section.key, field)" aria-label="Add note">＋</button>
+                    <button type="button" class="add" (click)="openCreate(sec.key, field)" aria-label="Add note">＋</button>
                   </div>
                   <div class="notes">
-                    @for (note of notesFor(section.key, field); track note.id) {
+                    @for (note of notesFor(sec.key, field); track note.id) {
                       <div class="note" (click)="openEdit(note)">
                         <span class="note-text">{{ note.content }}</span>
                         <button type="button" class="note-del" (click)="remove(note, $event)" aria-label="Delete">✕</button>
                       </div>
                     } @empty {
-                      <button type="button" class="note empty" (click)="openCreate(section.key, field)">＋ Add a note</button>
+                      <button type="button" class="note empty" (click)="openCreate(sec.key, field)">＋ Add a note</button>
                     }
                   </div>
                 </div>
@@ -72,11 +83,44 @@ import { GROWTH_SECTIONS, humaniseField } from './growth-fields';
   `,
   styles: [`
     .intro { margin: 0 0 18px; }
-    .canvas { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: var(--s-4); align-items: start; }
-    .sec { display: flex; flex-direction: column; gap: 14px; }
-    .sec-head h3 { font-size: 16px; }
-    .sec-head .faint { font-size: 12px; }
-    .fields { display: flex; flex-direction: column; gap: 14px; }
+
+    .layout { display: grid; grid-template-columns: 250px 1fr; gap: 18px; align-items: start; }
+
+    /* Left rail — section navigation */
+    .rail { display: flex; flex-direction: column; gap: 8px; position: sticky; top: 84px; }
+    .sec-item {
+      display: flex; align-items: center; gap: 11px;
+      padding: 12px 14px; border-radius: var(--r-md);
+      border: 1.5px solid var(--border); background: var(--surface);
+      font-weight: 800; font-size: 14px; color: var(--text-soft);
+      cursor: pointer; text-align: left; transition: all 0.15s;
+    }
+    .sec-item:hover { border-color: var(--border-strong); color: var(--text); }
+    .sec-item.sel { border-color: var(--primary); background: var(--primary-soft); color: var(--primary-strong); box-shadow: 0 0 0 4px var(--primary-soft); }
+    .sec-item .ic { font-size: 18px; line-height: 1; }
+    .sec-item .lbl { flex: 1; }
+    .sec-item .cnt {
+      font-size: 12px; font-weight: 900; min-width: 22px; text-align: center;
+      padding: 1px 7px; border-radius: var(--r-pill);
+      background: var(--primary-soft); color: var(--primary-strong);
+    }
+    .sec-item.sel .cnt { background: var(--surface); }
+
+    /* Right detail panel */
+    .detail { display: flex; flex-direction: column; gap: 20px; }
+    .detail-head h3 { font-size: 19px; }
+    .detail-head .faint { font-size: 13px; }
+    .fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 18px; }
+
+    @media (max-width: 860px) {
+      .layout { grid-template-columns: 1fr; gap: 14px; }
+      .rail {
+        position: static; flex-direction: row; overflow-x: auto;
+        gap: 8px; padding-bottom: 4px; -webkit-overflow-scrolling: touch;
+      }
+      .sec-item { flex: 0 0 auto; padding: 9px 13px; }
+      .fields { grid-template-columns: 1fr; }
+    }
     .field-block { display: flex; flex-direction: column; gap: 7px; }
     .fb-head { display: flex; align-items: center; justify-content: space-between; }
     .fname { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-faint); }
@@ -110,6 +154,11 @@ export class GrowthCanvasComponent implements OnInit {
   readonly canvas = signal<GrowthCanvas | null>(null);
   readonly loading = signal(true);
 
+  readonly selectedSection = signal<GrowthSection>('project_overview');
+  readonly current = computed<GrowthSectionDef | undefined>(() =>
+    GROWTH_SECTIONS.find((s) => s.key === this.selectedSection()),
+  );
+
   readonly showForm = signal(false);
   readonly editing = signal<GrowthNote | null>(null);
   readonly saving = signal(false);
@@ -139,6 +188,13 @@ export class GrowthCanvasComponent implements OnInit {
 
   notesFor(section: GrowthSection, field: string): GrowthNote[] {
     return this.canvas()?.[section]?.[field] ?? [];
+  }
+
+  /** Total notes across all fields of a section (for the rail count badge). */
+  countFor(section: GrowthSection): number {
+    const fields = this.canvas()?.[section];
+    if (!fields) return 0;
+    return Object.values(fields).reduce((sum, notes) => sum + notes.length, 0);
   }
 
   formContext(): string {
