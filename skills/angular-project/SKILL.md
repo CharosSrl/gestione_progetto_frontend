@@ -44,6 +44,53 @@ Use `--standalone` (default in Angular 17+). No NgModules unless the user explic
 
 ---
 
+## API Layer — generate from OpenAPI when a spec exists (REQUIRED)
+
+**Before hand-writing any models or HTTP services, check the project root (and
+common spots like `api/`, `docs/`, `spec/`) for an OpenAPI document**
+(`openapi.yaml` / `openapi.yml` / `openapi.json` / `swagger.yaml`). If one
+exists, generate the typed API layer from it instead of writing models and
+services by hand — the spec is the source of truth and hand-written DTOs drift.
+
+Use [`@openapitools/openapi-generator-cli`](https://openapi-generator.tech/) with
+the `typescript-angular` generator (it emits standalone-friendly, `HttpClient`-
+based services + typed models + enums):
+
+```bash
+npm install -D @openapitools/openapi-generator-cli
+npx openapi-generator-cli generate \
+  -i openapi.yaml \
+  -g typescript-angular \
+  -o src/app/core/api \
+  --additional-properties=ngVersion=20.0.0,providedInRoot=true,fileNaming=kebab-case,withInterfaces=true
+```
+
+Add an npm script so the client is regenerated whenever the spec changes:
+
+```jsonc
+// package.json
+"scripts": {
+  "api:gen": "openapi-generator-cli generate -i openapi.yaml -g typescript-angular -o src/app/core/api --additional-properties=ngVersion=20.0.0,providedInRoot=true,fileNaming=kebab-case,withInterfaces=true"
+}
+```
+
+Wiring rules:
+- Provide the generated `BASE_PATH` from `environment.apiUrl`, and register the
+  generated `Configuration`/`ApiModule` (or `provideApi`) in `app.config.ts`.
+- Treat `src/app/core/api/` as **generated** — never edit by hand; add it to
+  `.gitignore` *or* commit it but regenerate via `npm run api:gen` (pick one and
+  document it). Re-run codegen after every spec change; don't patch the output.
+- Keep app-specific logic (caching, mapping, signals) in thin wrapper services
+  under `core/services/` that call the generated clients — don't put business
+  logic in generated code.
+- Auth/interceptors still apply: the generated services use Angular's
+  `HttpClient`, so the JWT/Firebase interceptor attaches tokens automatically.
+
+Only hand-write models/services (per the patterns below) when the project has
+**no** OpenAPI spec.
+
+---
+
 ## Canonical Folder Structure
 
 ```
